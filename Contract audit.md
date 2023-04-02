@@ -1,6 +1,10 @@
-# Okolo Uchenna
+# Web3Bridge Assigment
 
-## Contract Review of Aavegotchi Alchemica Faucet.
+## Author: Okolo Uchenna
+
+## Title: Contract Review of Aavegotchi Alchemica Faucet.
+
+<hr>
 
 ### Contents
 
@@ -32,7 +36,7 @@ They are fair-launch ERC20 tokens that are used to craft Installation NFTs withi
 **How To Earn Alchemica** <br>
 _Players can earn Alchemica in three distinct ways_:
 
-1. farming from their REALM parcels.
+1. **farming** from their REALM parcels.
 2. **Alchemical Channeling** which comes as daily stipends from the gotchiverse as daily stipends from Aavegotchis.
 3. **Communal Channeling** which comes as result of lodge installations built upon realm parcels.
 4. Gotchus Alchemica can also be exchanged for GHST (i.e Aavegotchi eco-governance token) using our native DEX, the Gotchus Alchemica exchange (GAX).
@@ -71,6 +75,7 @@ Futher reviewing the contract, parcels is a variable of mapping to struct _"Parc
 
 - This fuction returns a boolean value(True or False) to indicates an onwer's realm parcel is being surveyed by owner or not.
 - It checks this by looking into parcels to get the value for key "surveying".
+<hr>
 
 2. function startSurveying
 <pre>
@@ -90,5 +95,225 @@ drawRandomNumbers(\_realmId, s.parcels[_realmId].currentRound);
 }</pre>
 
 - Allow the owner of a parcel to start surveying his parcel
-- Will throw if a surveying round has not started
-- realmId Identifier of the parcel to survey
+- It requires that requires that currentRound <= s.surveyingRound ("s" is referencing the diamond storage).<br>This is because after each round of Survey, surveyingRound is increased to value of currentRound.
+- it requires owner to install atleast an Altar(Initially used for Alchemical Channeling)
+- function Will throw an error message if a surveying round has not started
+- The drawRandom number function is inherited from the chainLink VRF and is used to generate the number of materials in the
+  Real parcel.
+  <hr>
+
+3. function drawRandomNumber
+<pre>
+function drawRandomNumbers(uint256 _realmId, uint256 _surveyingRound) internal {
+  // Will revert if subscription is not set and funded.
+  uint256 requestId = VRFCoordinatorV2Interface(s.vrfCoordinator).requestRandomWords(
+    s.requestConfig.keyHash,
+    s.requestConfig.subId,
+    s.requestConfig.requestConfirmations,
+    s.requestConfig.callbackGasLimit,
+    s.requestConfig.numWords
+  );
+  s.vrfRequestIdToTokenId[requestId] = _realmId;
+  s.vrfRequestIdToSurveyingRound[requestId] = _surveyingRound;
+}
+</pre>
+
+- This function utilizes the chainlink VRF to generate the random number used in the ststartSurveying function.
+<hr>
+
+4. function getAlchemicaAddresses()
+<pre>
+function getAlchemicaAddresses() external view returns (address[4] memory) {
+    return s.alchemicaAddresses;
+  }
+</pre>
+
+- This basically returns a fixed array of addresses for the 4 Alchemica elements(ERC20 token).
+**NB**: Recall there are potentially 4 Alchemicas (FOMO, KEK, ALPHA, FUD). The Address required is one of those as revealed in parcel.
+<hr>
+
+5. function getTotalAlchemicas()
+<pre>
+function getTotalAlchemicas() external view returns (uint256[4][5] memory) {
+return s.totalAlchemicas;
+}
+</pre>
+
+- returns A two dimensional array that returns an Alchemica (FOMO, KEK, ALPHA, FUD) with is corresponding value.
+<hr>
+
+6. function getRealmAlchemica
+<pre>
+function getRealmAlchemica(uint256 \_realmId) external view returns (uint256[4] memory) {
+   return s.parcels[_realmId].alchemicaRemaining;
+   }
+</pre>
+
+- This function queries and returns the amount of Alchemica remaining in a real parcel.
+- Its takes "\_realmID " (which is basically the parcel Identifier) as an argument and returns details about remaining Alchemicas in the parcel.
+- This is also an array of integers.
+<hr>
+
+7. function getParcelCurrentRound
+<pre>
+function getParcelCurrentRound(uint256 _realmId) external view returns (uint256) {
+    return s.parcels[_realmId].currentRound;
+  }
+</pre>
+
+**NB**: Recall startSurveying function. remember that after each round of Survey, surveyingRound is increased to value of currentRound.
+
+- CurrentRound here refers to current survey round and they start at zero and increment by one after each round of survey.
+<hr>
+
+8. function progressSurveyingRound()
+<pre>
+function progressSurveyingRound() external onlyOwner {
+    s.surveyingRound++;
+    emit SurveyingRoundProgressed(s.surveyingRound);
+  }
+</pre>
+
+- This further solidifies the startSurveying and getParcelCurrentRound functions. the diamond Owner increments this at the end of each round of survey.
+<hr>
+
+9. function getRoundAlchemica
+<pre>
+function getRoundAlchemica(uint256 _realmId, uint256 _roundId) external view returns (uint256[] memory) {
+    return s.parcels[_realmId].roundAlchemica[_roundId];
+  }
+</pre>
+
+**NB**: Depending on Realm parcel size (i.e Humble, Reasonable, Spacious vertical, Spacious horizontal and Partner) each parcel gets an alchemica boost. This simply means more Alchemica in your parcel.
+
+- This function takes realmID and roundID as arguments to return an array of all Alchemicas gotten from parcel, this includes boosts.
+<hr>
+
+10. function getRoundBaseAlchemica
+<pre>
+function getRoundBaseAlchemica(uint256 _realmId, uint256 _roundId) external view returns (uint256[] memory) {
+    return s.parcels[_realmId].roundBaseAlchemica[_roundId];
+  }
+</pre>
+
+- This function does retrieves the same details as the getRoundAlchemica function with the exception of boosts.
+<hr>
+
+11. function setVars
+<pre>
+function setVars() external onlyOwner {
+    
+    s.boostMultipliers = _boostMultipliers;
+    s.greatPortalCapacity = _greatPortalCapacity;
+    s.installationsDiamond = _installationsDiamond;
+    s.vrfCoordinator = _vrfCoordinator;
+    s.linkAddress = _linkAddress;
+    s.alchemicaAddresses = _alchemicaAddresses;
+    s.backendPubKey = _backendPubKey;
+    s.gameManager = _gameManager;
+    s.gltrAddress = _gltrAddress;
+    s.tileDiamond = _tileDiamond;
+    s.aavegotchiDiamond = _aavegotchiDiamond;
+  }
+</pre>
+
+**NB**: The Length/contents of this function was removed for readability. It still contains the significant informations.
+
+- This allows diamond owner to set the foolowing state variables.
+- alchemicas: A nested array containing the amount of alchemicas available
+- boostMultipliers: The boost multiplers applied to each parcel
+- greatPortalCapacity: The individual alchemica capacity of the great portal(This where Aavegotchis are summoned)
+- installationsDiamond: The installations diamond address
+- vrfCoordinator: The chainlink vrfCoordinator address
+- linkAddress: The link token address
+- alchemicaAddresses: The four alchemica token addresses (FOMO, FUD, KEK, ALPHA)
+- backendPubKey: The Realm(gotchiverse) backend public key
+- gameManager: The address of the game manager
+<hr>
+
+12. function setTotalAlchemicas
+<pre>
+function setTotalAlchemicas(uint256[4][5] calldata _totalAlchemicas) external onlyOwner {
+    for (uint256 i; i < _totalAlchemicas.length; i++) {
+      for (uint256 j; j < _totalAlchemicas[i].length; j++) {
+        s.totalAlchemicas[i][j] = _totalAlchemicas[i][j];
+      }
+    }
+  }
+</pre>
+
+- This fuction takes a nested array of Uint as argument and loops through the array of Alchemicas and assigns the value for each Alchemica.
+<hr>
+
+13. function getAvailableAlchemica
+<pre>
+  function getAvailableAlchemica(uint256 _realmId) public view returns (uint256[4] memory _availableAlchemica) {
+    for (uint256 i; i < 4; i++) {
+      _availableAlchemica[i] = LibAlchemica.getAvailableAlchemica(_realmId, i);
+    }
+  }
+</pre>
+
+- This function takes realmId as an argument and returns an array uint representing the available amount of Alchemicas in the Parcel.
+<hr>
+
+14. function calculateTransferAmounts
+**Context**: When realm parcels are got, often times, there are _spillovers_. This refers to alchimcas that where did not go to parcel owner.
+Each Realm parcel has its spill over rate.
+<pre>
+function calculateTransferAmounts(uint256 _amount, uint256 _spilloverRate) internal pure returns (TransferAmounts memory) {
+    uint256 owner = (_amount * (bp - (_spilloverRate * 10**16))) / bp;
+    uint256 spill = (_amount * (_spilloverRate * 10**16)) / bp;
+    return TransferAmounts(owner, spill);
+  }
+</pre>
+
+- The internal function takes a uint \_amount, and uint \_spilloverRate as argument to calculate the amount of Alchemica a user receives and the spillover amount.
+- bp is a constant variable of 100 ether.
+<hr>
+
+15. function lastClaimedAlchemica
+<pre>
+function lastClaimedAlchemica(uint256 _realmId) external view returns (uint256) {
+    return s.lastClaimedAlchemica[_realmId];
+  }
+</pre>
+
+- This function takes realmId as an argument and returns the amount of last claimed alchemica.
+<hr>
+
+16. function claimAvailableAlchemica
+**NB**: Users also get alchemica with their Aavegotchi NFTs.
+<pre>
+  /// @notice 
+  /// @param _realmId Identifier of parcel to claim alchemica from
+  /// @param _gotchiId Identifier of Aavegotchi to use for alchemica collecction/claiming
+  /// @param _signature Message signature used for backend validation
+  function claimAvailableAlchemica(
+    uint256 _realmId,
+    uint256 _gotchiId,
+    bytes memory _signature
+  ) external gameActive {
+    //Check signature
+    require(
+      LibSignature.isValid(keccak256(abi.encode(_realmId, _gotchiId, s.lastClaimedAlchemica[_realmId])), _signature, s.backendPubKey),
+      "AlchemicaFacet: Invalid signature"
+    );
+
+    //1 - Empty Reservoir Access Right
+    LibRealm.verifyAccessRight(_realmId, _gotchiId, 1, LibMeta.msgSender());
+    LibAlchemica.claimAvailableAlchemica(_realmId, _gotchiId);
+  }
+
+function getHarvestRates(uint256 \_realmId) external view returns (uint256[] memory harvestRates) {
+harvestRates = new uint256[](4);
+for (uint256 i; i < 4; i++) {
+harvestRates[i] = s.parcels[_realmId].alchemicaHarvestRate[i];
+}
+}
+
+</pre>
+
+- This Function allows parcel owner to claim available alchemica with his parent NFT(Aavegotchi)
+- It acheives this by taking realmId, gotchiId(NFT) and the signature message used for backend validation.
+- Backend validation is acheived by calling isValid function from the LibSignature dependency. This function returns a bool value to validate or invalidate user.
