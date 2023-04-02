@@ -285,10 +285,6 @@ function lastClaimedAlchemica(uint256 _realmId) external view returns (uint256) 
 16. function claimAvailableAlchemica
 **NB**: Users also get alchemica with their Aavegotchi NFTs.
 <pre>
-  /// @notice 
-  /// @param _realmId Identifier of parcel to claim alchemica from
-  /// @param _gotchiId Identifier of Aavegotchi to use for alchemica collecction/claiming
-  /// @param _signature Message signature used for backend validation
   function claimAvailableAlchemica(
     uint256 _realmId,
     uint256 _gotchiId,
@@ -303,17 +299,85 @@ function lastClaimedAlchemica(uint256 _realmId) external view returns (uint256) 
     //1 - Empty Reservoir Access Right
     LibRealm.verifyAccessRight(_realmId, _gotchiId, 1, LibMeta.msgSender());
     LibAlchemica.claimAvailableAlchemica(_realmId, _gotchiId);
-  }
+}
 
+</pre>
+
+**NB**: Some logics in the function were cut off for the sake of readability. This is with respect to this review file.
+
+- This Function allows parcel owner to claim available alchemica with his parent NFT(Aavegotchi)
+- It acheives this by taking realmId, gotchiId(NFT) and the signature message used for backend validation.
+- Backend validation is acheived by calling isValid function from the LibSignature dependency. This function returns a bool value to validate or invalidate user.
+- The function logic also confirms user right on the alchemica which is acheived by calling the verifyAccessRight on the LibRealm dependency.
+- It also uses the claimAvailableAlchemica in LibAlchemica to calculate the amount of alchemica available for claim.
+- **Alchemica claiming has an 8 hour cooldown time** before next claiming.
+<hr>
+
+17. function getHarvestRates
+<pre>
 function getHarvestRates(uint256 \_realmId) external view returns (uint256[] memory harvestRates) {
 harvestRates = new uint256[](4);
 for (uint256 i; i < 4; i++) {
 harvestRates[i] = s.parcels[_realmId].alchemicaHarvestRate[i];
 }
 }
-
 </pre>
 
-- This Function allows parcel owner to claim available alchemica with his parent NFT(Aavegotchi)
-- It acheives this by taking realmId, gotchiId(NFT) and the signature message used for backend validation.
-- Backend validation is acheived by calling isValid function from the LibSignature dependency. This function returns a bool value to validate or invalidate user.
+- This function serves to return the harvest rate of a specified realm. It takes RealmId as an argument.
+<hr>
+
+18. function getCapacities
+<pre>
+function getCapacities(uint256 _realmId) external view returns (uint256[] memory capacities) {
+    capacities = new uint256[](4);
+    for (uint256 i; i < 4; i++) {
+      capacities[i] = LibAlchemica.calculateTotalCapacity(_realmId, i);
+    }
+  }
+</pre>
+
+- Function takes realmId as an argument and returns the yield Alchemica capacity of the realm parcel.
+
+19. function getTotalClaimed
+<pre>
+function getTotalClaimed(uint256 _realmId) external view returns (uint256[] memory totalClaimed) {
+    totalClaimed = new uint256[](4);
+    for (uint256 i; i < 4; i++) {
+      totalClaimed[i] = LibAlchemica.getTotalClaimed(_realmId, i);
+    }
+  }
+</pre>
+
+_Refer to function getRoundAlchemica._
+
+- This function gets total claimed Alchemica by taking the realmId as an argument and then subtracts the return value of getRoundAlchemica from alchemicaRemaining.
+- It returns a uint array for each Alchemica's total claimed.
+
+20. function channelAlchemica
+**NB**<br>
+Gotchus Alchemica(Alchemica) can be extracted through various ways. One which is channeling. This can come as a result of owning a gotchi or when installations are built on a realm parcel. They come as stipend for owning the gotchi or the installation.
+<pre>
+  function channelAlchemica(
+    uint256 _realmId,
+    uint256 _gotchiId,
+    uint256 _lastChanneled,
+    bytes memory _signature
+  ) external gameActive {}
+</pre>
+
+- This implements the Alchemical channeling which allows users earn Alchemica for owning Aavegotchis.
+- This function enables the transfer of Alchemica to the parent ERC721 token with id \_gotchiId and also to the great portal(i.e the portal that protects the Gotchiverse universe/Realm.)
+- It takes input of realmId, gotchiId, \_lastChanneled and signature as arguments.
+- Verification functions are called within this function before transfer is validated this includes Message signature used for backend validation.
+- After transaction lastchenneled is updated to just concluded transaction.
+
+21. getParcelLastChanneled
+<pre>
+/// @notice Return the last timestamp of an altar channeling
+  /// @dev used as a parameter in channelAlchemica
+  /// @param _parcelId Identifier of ERC721 parcel
+  /// @return last channeling timestamp
+  function getParcelLastChanneled(uint256 _parcelId) public view returns (uint256) {
+    return s.parcelChannelings[_parcelId];
+  }
+</pre>
