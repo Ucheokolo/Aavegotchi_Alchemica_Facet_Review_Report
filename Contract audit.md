@@ -57,9 +57,9 @@ The Gotchiverse Realm is where most of the game play takes place.
 2. "LibAlchemica"; Which contains the function logics for the Alchemica Facet.
 3. "RealmFacet"; Which is the code base implementation of Realm Parcel in [Gotchiverse](https://wiki.aavegotchi.com/en/gotchiverse)
 4. "LibMeta.sol";
-5. "VRFCoordinatorV2Interface";
-6. "LibSignature";
-7. "IERC20Extended";
+5. "VRFCoordinatorV2Interface"; for random number generation
+6. "LibSignature"; for backend validation
+7. "IERC20Extended"; for Alchemica
 
 **Functions Review** <br>
 The Gotchiverse houses Districts that comprises of Realm parcels. Users can obtain this Realm parcels. This forms the basis for
