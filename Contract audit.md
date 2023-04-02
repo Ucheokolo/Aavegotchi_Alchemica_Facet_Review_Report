@@ -337,6 +337,7 @@ function getCapacities(uint256 _realmId) external view returns (uint256[] memory
 </pre>
 
 - Function takes realmId as an argument and returns the yield Alchemica capacity of the realm parcel.
+<hr>
 
 19. function getTotalClaimed
 <pre>
@@ -352,8 +353,10 @@ _Refer to function getRoundAlchemica._
 
 - This function gets total claimed Alchemica by taking the realmId as an argument and then subtracts the return value of getRoundAlchemica from alchemicaRemaining.
 - It returns a uint array for each Alchemica's total claimed.
+<hr>
 
 20. function channelAlchemica
+_The function logics for this function was cut off completetly in this file the sake of readability_
 **NB**<br>
 Gotchus Alchemica(Alchemica) can be extracted through various ways. One which is channeling. This can come as a result of owning a gotchi or when installations are built on a realm parcel. They come as stipend for owning the gotchi or the installation.
 <pre>
@@ -370,14 +373,44 @@ Gotchus Alchemica(Alchemica) can be extracted through various ways. One which is
 - It takes input of realmId, gotchiId, \_lastChanneled and signature as arguments.
 - Verification functions are called within this function before transfer is validated this includes Message signature used for backend validation.
 - After transaction lastchenneled is updated to just concluded transaction.
+<hr>
 
 21. getParcelLastChanneled
 <pre>
-/// @notice Return the last timestamp of an altar channeling
-  /// @dev used as a parameter in channelAlchemica
-  /// @param _parcelId Identifier of ERC721 parcel
-  /// @return last channeling timestamp
   function getParcelLastChanneled(uint256 _parcelId) public view returns (uint256) {
     return s.parcelChannelings[_parcelId];
   }
 </pre>
+
+**NB**: Reference footnote from function channelAlchemica.
+
+- Function return the last timestamp of an altar channeling
+- Takes parcelId Identifier of ERC721 parcel.
+<hr>
+
+22. function batchTransferAlchemica
+<pre>
+  function batchTransferAlchemica(address[] calldata _targets, uint256[4][] calldata _amounts) external {
+    require(_targets.length == _amounts.length, "AlchemicaFacet: Mismatched array lengths");
+
+    IERC20Mintable[4] memory alchemicas = [
+      IERC20Mintable(s.alchemicaAddresses[0]),
+      IERC20Mintable(s.alchemicaAddresses[1]),
+      IERC20Mintable(s.alchemicaAddresses[2]),
+      IERC20Mintable(s.alchemicaAddresses[3])
+    ];
+
+    for (uint256 i = 0; i < _targets.length; i++) {
+      for (uint256 j = 0; j < _amounts[i].length; j++) {
+        if (_amounts[i][j] > 0) {
+          alchemicas[j].transferFrom(msg.sender, _targets[i], _amounts[i][j]);
+        }
+      }
+    }
+  }
+</pre>
+
+- This is a helper function to batch transfer alchemica
+- The Logic contains Array of target addresses(Alchemica Addresses)
+- It takes an input of nested Array of [Alchemica Address][amount] in a predefined order(i.e FUD, FOMO, ALPHA, KEK)
+<hr>
