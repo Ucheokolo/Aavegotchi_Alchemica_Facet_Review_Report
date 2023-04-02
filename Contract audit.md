@@ -414,3 +414,46 @@ Gotchus Alchemica(Alchemica) can be extracted through various ways. One which is
 - The Logic contains Array of target addresses(Alchemica Addresses)
 - It takes an input of nested Array of [Alchemica Address][amount] in a predefined order(i.e FUD, FOMO, ALPHA, KEK)
 <hr>
+
+23. function batchTransferTokensToGotchis
+<pre>
+  function batchTransferTokensToGotchis(
+    uint256[] calldata _gotchiIds,
+    address[] calldata _tokenAddresses,
+    uint256[][] calldata _amounts
+  ) external {
+    require(_gotchiIds.length == _amounts.length, "AlchemicaFacet: Mismatched array lengths");
+
+    for (uint256 i = 0; i < _gotchiIds.length; i++) {
+      for (uint256 j = 0; j < _amounts[i].length; j++) {
+        require(_tokenAddresses.length == _amounts[i].length, "RealmFacet: Mismatched array lengths");
+        uint256 amount = _amounts[i][j];
+        if (amount > 0) {
+          IERC20(_tokenAddresses[j]).transferFrom(msg.sender, LibAlchemica.alchemicaRecipient(_gotchiIds[i]), amount);
+          emit TransferTokensToGotchi(msg.sender, _gotchiIds[i], _tokenAddresses[j], amount);
+        }
+      }
+    }
+  }
+</pre>
+
+- This is Helper function to batch transfer alchemica to Aavegotchis
+- It takes argument of Alchemica token addresses array, an array of gotchiIDs and a nested array of amounts to tranfer.
+- Array must alligned with predefine order of addresses.
+<hr>
+
+24. function setChannelingLimits
+<pre>
+  /// @notice Owner function to change the altars channeling limits
+  /// @param _altarLevel Array of altars level
+  /// @param _limits Array of time limits
+  function setChannelingLimits(uint256[] calldata _altarLevel, uint256[] calldata _limits) external onlyOwner {
+    require(_altarLevel.length == _limits.length, "AlchemicaFacet: array mismatch");
+    for (uint256 i; i < _limits.length; i++) {
+      s.channelingLimits[_altarLevel[i]] = _limits[i];
+    }
+  }
+</pre>
+
+- This function is Owner function to change the altars channeling limits
+- Takes an Array of altars level and Array of time limits
