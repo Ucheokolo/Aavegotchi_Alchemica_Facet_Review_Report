@@ -457,3 +457,7 @@ Gotchus Alchemica(Alchemica) can be extracted through various ways. One which is
 
 - This function is Owner function to change the altars channeling limits
 - Takes an Array of altars level and Array of time limits
+
+### Summary
+
+This review is limited to the Alchemica Facet. Although it might reference other facets or libraries for a broader understanding of specific functions.
